@@ -110,64 +110,10 @@ class Main extends Component {
 
     render() {
 
-        let {supported, enabled, tag, text, parsedText, isTestRunning} = this.state;
         return (
             <View style={{flex: 1}}>
                 <Header />
             </View>
-            // <ScrollView style={{flex: 1}}>
-            //     <View style={{flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20}}>
-            //         <Text>{`Is NFC supported ? ${supported}`}</Text>
-            //         <Text>{`Is NFC enabled (Android only)? ${enabled}`}</Text>
-            //
-            //         {
-            //             <View style={{padding: 20, marginTop: 20, backgroundColor: '#f0f0f0'}}>
-            //                 <View style={{flexDirection: 'row', alignItems: 'center'}}>
-            //                     <Text>Text to write:</Text>
-            //                     <TextInput
-            //                         value={text}
-            //                         style={{marginLeft: 10, flex: 1}}
-            //                         onChangeText={text => this.setState({text})}
-            //                     />
-            //                 </View>
-            //
-            //                 {!isTestRunning && (
-            //                     <TouchableOpacity
-            //                         style={{margin: 10}}
-            //                         onPress={() => this._runTest(text)}
-            //                     >
-            //                         <Text style={{color: 'blue', textAlign: 'center', fontSize: 20}}>CLICK TO RUN
-            //                             TEST</Text>
-            //                     </TouchableOpacity>
-            //                 )}
-            //
-            //                 {isTestRunning && (
-            //                     <TouchableOpacity
-            //                         style={{margin: 10}}
-            //                         onPress={() => this._cancelTest()}
-            //                     >
-            //                         <Text style={{color: 'red', textAlign: 'center', fontSize: 20}}>CLICK TO CANCEL
-            //                             TEST</Text>
-            //                     </TouchableOpacity>
-            //                 )}
-            //
-            //                 <Text style={{color: 'grey', textAlign: 'center'}}>
-            //                     {`When the tag is available, this demo will:\n1. read original NdefMessage from the tag\n2. write a NdefMessage contains a RTD_TEXT into it `}
-            //                 </Text>
-            //             </View>
-            //         }
-            //
-            //         <View style={{alignItems: 'center', justifyContent: 'center', padding: 20, marginTop: 20}}>
-            //             <Text>{`Original tag content:`}</Text>
-            //             <Text style={{marginTop: 5, color: 'grey'}}>{`${tag ? JSON.stringify(tag) : '---'}`}</Text>
-            //             {parsedText && <Text style={{marginTop: 5}}>{`(Parsed Text: ${parsedText})`}</Text>}
-            //         </View>
-            //
-            //         <TouchableOpacity style={{marginTop: 20, alignItems: 'center'}} onPress={this._clearMessages}>
-            //             <Text style={{color: 'blue'}}>Clear above message</Text>
-            //         </TouchableOpacity>
-            //     </View>
-            // </ScrollView>
         );
     }
 
