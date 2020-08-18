@@ -3,6 +3,7 @@ import {Text, View, Image, TouchableOpacity, Platform, Button} from 'react-nativ
 import NfcManager, {NfcTech} from 'react-native-nfc-manager';
 import {Card} from 'react-native-elements';
 import Service from './Service';
+import {credentials} from './Constants';
 
 class ReadNfc extends Component {
 
@@ -17,13 +18,17 @@ class ReadNfc extends Component {
         };
     }
 
-    componentDidMount=()=> {
+
+    componentDidMount = async () => {
         this.setState({
-            nom:null,
-            prenom:null
-        })
+            nom: null,
+            prenom: null,
+        });
         NfcManager.start();
-    }
+        await Service.authenticate(credentials.username, credentials.password).then(r => {
+            global.token=r.data.jwt
+        });
+    };
 
     componentWillUnmount() {
         this._cleanUp();
@@ -53,11 +58,11 @@ class ReadNfc extends Component {
                 </View>
             );
         } else {
-            if(this.state.nom!==null && this.state.prenom!==null) {
+            if (this.state.nom !== null && this.state.prenom !== null) {
                 return (
 
                     <View style={{flex: 1}}>
-                        <Card title={"Informations"} titleStyle={{fontSize: 20}}>
+                        <Card title={'Informations'} titleStyle={{fontSize: 20}}>
                             <Text>Nom : {this.state.nom} </Text>
                             <Text>Prenom : {this.state.prenom} </Text>
                             <View style={{marginTop: 170}}>
@@ -67,14 +72,14 @@ class ReadNfc extends Component {
                         </Card>
                     </View>
                 );
-            }else{
-                return <View style={{flex:1,alignItems:"center",justifyContent:"center"}}>
+            } else {
+                return <View style={{flex: 1, alignItems: 'center', justifyContent: 'center'}}>
                     <Text>No data available</Text>
                     <View style={{marginTop: 170}}>
                         <Button style={{padding: 170}} title="Read another tag"
                                 onPress={() => this.setState({data: null, buttonPressed: false})}/>
                     </View>
-                </View>
+                </View>;
             }
         }
 
@@ -94,8 +99,8 @@ class ReadNfc extends Component {
         return String.fromCharCode.apply(String, array);
     }
 
-    stringtoJSON(string){
-        return JSON.parse(string)
+    stringtoJSON(string) {
+        return JSON.parse(string);
     }
 
     _cleanUp = () => {
@@ -110,19 +115,19 @@ class ReadNfc extends Component {
                 alertMessage: 'Ready to do some custom Mifare cmde!',
             });
             let tag = await NfcManager.getTag();
-            let tagId = tag.id
+            let tagId = tag.id;
             let data = tag.ndefMessage[0].payload.slice(3);
             this.setState({data: this.bin2String(data)});
             this.setState({
-                tagId:tagId,
-                nom:this.stringtoJSON(this.state.data).nom,
-                prenom:this.stringtoJSON(this.state.data).prenom
-            })
-            const string = this.state.tagId+","+this.state.nom+","+this.state.prenom
+                tagId: tagId,
+                nom: this.stringtoJSON(this.state.data).nom,
+                prenom: this.stringtoJSON(this.state.data).prenom,
+            });
+            const string = this.state.tagId + ',' + this.state.nom + ',' + this.state.prenom;
             let jsonrequest = {
-                m:string
-            }
-            await Service.sendData(jsonrequest).then(this._cleanUp()).catch(()=>alert("No network connection"))
+                m: string,
+            };
+            await Service.sendData(jsonrequest).then(this._cleanUp()).catch(() => alert('No network connection'));
 
         } catch (ex) {
             NfcManager.unregisterTagEvent().catch(() => 0);
