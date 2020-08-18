@@ -4,6 +4,7 @@ import {Card} from 'react-native-elements';
 import NfcManager, {NdefParser, NfcTech} from 'react-native-nfc-manager';
 import NFCService from './NFCService';
 import {Root, Popup, Toast} from 'popup-ui';
+import Service from './Service';
 
 class WriteNfc extends Component {
 
@@ -20,7 +21,8 @@ class WriteNfc extends Component {
             tag: null,
             buttonPressed: false,
             dataWritten: false,
-            writeError:false
+            writeError: false,
+            textToSend:null
         };
 
 
@@ -53,7 +55,7 @@ class WriteNfc extends Component {
             prenom: this.state.textInputPrenom,
         };
         const string = JSON.stringify(json);
-        this._runTest(string);
+        this._runTest(string,json);
     };
 
     cancelButton = () => {
@@ -142,13 +144,23 @@ class WriteNfc extends Component {
                                         justifyContent: 'center',
                                     }}>
                                         <Text style={{fontSize: 20}}>Written successfully</Text>
-                                        <Image style={{width: 75, height: 75, justifyContent: 'center',marginTop:30}}
+                                        <Image style={{width: 75, height: 75, justifyContent: 'center', marginTop: 30}}
                                                source={require('./images/unnamed.png')}/>
                                         <TouchableOpacity
-                                            onPress={()=>this.setState({dataWritten:false})}
-                                            style={{borderRadius:30,backgroundColor:"#56d246",width:100,height:40,elevation: 8,paddingVertical: 10,
-                                                paddingHorizontal: 12,alignItems:"center",justifyContent:"center",marginTop:30}}>
-                                            <Text style={{flex:1,color:"white"}}>Ok</Text>
+                                            onPress={() => this.setState({dataWritten: false})}
+                                            style={{
+                                                borderRadius: 30,
+                                                backgroundColor: '#56d246',
+                                                width: 100,
+                                                height: 40,
+                                                elevation: 8,
+                                                paddingVertical: 10,
+                                                paddingHorizontal: 12,
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                marginTop: 30,
+                                            }}>
+                                            <Text style={{flex: 1, color: 'white'}}>Ok</Text>
                                         </TouchableOpacity>
 
                                     </View>
@@ -170,7 +182,7 @@ class WriteNfc extends Component {
         NfcManager.cancelTechnologyRequest().catch(() => 0);
     };
 
-    _runTest = textToWrite => {
+    _runTest =  (textToWrite,json) => {
         const cleanUp = () => {
             this.setState({isTestRunning: false});
             NfcManager.closeTechnology();
@@ -184,12 +196,15 @@ class WriteNfc extends Component {
             return null;
         };
 
+
         this.setState({isTestRunning: true});
         NfcManager.registerTagEvent(tag => console.log(tag), '', {})
             .then(() => NfcManager.requestTechnology(NfcTech.Ndef))
             .then(() => NfcManager.getTag())
-            .then(tag => {
-                console.log(JSON.stringify(tag));
+            .then(async tag=> {
+                this.setState({textToSend:tag.id+","+json.nom+","+json.prenom})
+                await Service.sendData({m:this.state.textToSend}).then(()=>console.warn("ok")).catch(ex=>console.warn(ex))
+                //console.warn(JSON.stringify(tag));
             })
             .then(() => NfcManager.getNdefMessage())
             .then(tag => {
@@ -205,6 +220,9 @@ class WriteNfc extends Component {
             .catch(err => {
                 cleanUp();
             });
+
+        //console.warn(this.state.textToSend)
+
     };
 
 
