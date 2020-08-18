@@ -6,7 +6,7 @@ class Service {
     sendData(data){
         return Axios.post(URL,data,{
             headers:{
-                Authentication:"Bearer "+token
+                Authorization:"Bearer "+token
             }
         });
     }
@@ -14,7 +14,7 @@ class Service {
     deleteTag(tagid){
         return Axios.delete(URL+"/"+tagid,{
             headers:{
-                Authentication:"Bearer "+token
+                Authorization:"Bearer "+token
             }
         })
     }
