@@ -17,7 +17,6 @@ class NFCService {
         if (Platform.OS === 'ios') {
             return Promise.reject('not implemented');
         }
-
         return new Promise((resolve, reject) => {
             NativeNfcManager.closeTechnology((err, result) => {
                 if (err) {

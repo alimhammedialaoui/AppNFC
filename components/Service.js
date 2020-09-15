@@ -1,11 +1,29 @@
 import React from 'react';
-import Axios from 'axios'
-import {URL,URL1} from "./Constants"
+import Axios from 'axios';
+import {authenticate, microservice_personne, microservice_tag, microservice_tag_register, URL} from './Constants';
+import {credentials} from './Constants';
 
 class Service {
-    sendData(data){
-        return Axios.post(URL,data,{
+    GetUserById(id){
+        return Axios.get(URL+microservice_personne+"/"+id,{
             headers:{
+                Authorization:"Bearer "+token
+            }
+        })
+    }
+
+    GetAllTagUser(){
+        return Axios.get(URL+microservice_tag,{
+            headers:{
+                Authorization:"Bearer "+token
+            }
+        })
+    }
+
+    TagRegister(data){
+        return Axios.post(URL+microservice_tag_register+'/add',data,{
+            headers:{
+                'Content-Type':'application/json',
                 Authorization:"Bearer "+token
             }
         });
@@ -20,7 +38,7 @@ class Service {
     }
 
     authenticate(username,password){
-        return Axios.post(URL1+"/authenticate",{
+        return Axios.post(URL+authenticate,{
             username:username,
             password:password
         })

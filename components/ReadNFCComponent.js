@@ -4,6 +4,7 @@ import NfcManager, {NfcTech} from 'react-native-nfc-manager';
 import {Card} from 'react-native-elements';
 import Service from './Service';
 import {credentials} from './Constants';
+import EncryptionService from './EncryptionService';
 
 class ReadNfc extends Component {
 
@@ -26,7 +27,7 @@ class ReadNfc extends Component {
         });
         NfcManager.start();
         await Service.authenticate(credentials.username, credentials.password).then(r => {
-            global.token=r.data.jwt
+            global.token = r.data.jwt;
         });
     };
 
@@ -108,7 +109,6 @@ class ReadNfc extends Component {
     };
 
     _test = async () => {
-
         try {
             let tech = Platform.OS === 'ios' ? NfcTech.MifareIOS : NfcTech.NfcA;
             let resp = await NfcManager.requestTechnology(tech, {
@@ -117,18 +117,14 @@ class ReadNfc extends Component {
             let tag = await NfcManager.getTag();
             let tagId = tag.id;
             let data = tag.ndefMessage[0].payload.slice(3);
-            this.setState({data: this.bin2String(data)});
-            this.setState({
-                tagId: tagId,
-                nom: this.stringtoJSON(this.state.data).nom,
-                prenom: this.stringtoJSON(this.state.data).prenom,
-            });
-            const string = this.state.tagId + ',' + this.state.nom + ',' + this.state.prenom;
-            let jsonrequest = {
-                m: string,
-            };
-            await Service.sendData(jsonrequest).then(this._cleanUp()).catch(() => alert('No network connection'));
 
+            this.setState({data: this.bin2String(data)});
+            var decryptedText = EncryptionService.decrypt(this.state.data)
+            var outputJson = JSON.parse(decryptedText)
+            outputJson.map(object =>{
+                console.log(object.m)
+            })
+            await Service.TagRegister(outputJson).then(()=>{this._cleanUp()}).catch(() => alert('No network connection'));
         } catch (ex) {
             NfcManager.unregisterTagEvent().catch(() => 0);
         }

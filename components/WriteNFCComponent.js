@@ -1,10 +1,12 @@
-import React, {Component, useState} from 'react';
-import {Text, View, TextInput, Image, Button, Modal, TouchableHighlight, TouchableOpacity} from 'react-native';
+import React, {Component} from 'react';
+import {Button, Image, Modal, ScrollView, Text, TouchableOpacity, View} from 'react-native';
 import {Card} from 'react-native-elements';
 import NfcManager, {NdefParser, NfcTech} from 'react-native-nfc-manager';
 import NFCService from './NFCService';
-import {Root, Popup, Toast} from 'popup-ui';
+import {Root} from 'popup-ui';
 import Service from './Service';
+import {credentials} from './Constants';
+import EncryptionService from './EncryptionService';
 
 class WriteNfc extends Component {
 
@@ -22,167 +24,171 @@ class WriteNfc extends Component {
             buttonPressed: false,
             dataWritten: false,
             writeError: false,
-            textToSend:null
+            textToSend: null,
+            listTagUsers: null,
+            listUsers: null,
+            listToWrite: [],
+            Date: null,
         };
-
-
     }
 
-    componentDidMount() {
+    componentDidMount = async () => {
+        await Service.authenticate(credentials.username, credentials.password).then(r => {
+            global.token = r.data.jwt;
+        });
+        await Service.GetAllTagUser().then(response => this.setState({listTagUsers: (response.data)}));
+        global.users = [];
+        global.personnes = [];
+        if (this.state.listTagUsers != null) {
+            this.state.listTagUsers.map(async taguser => {
+                await Service.GetUserById(taguser.personne_id).then(response => {
+                    personnes.push(
+                        {
+                            TAG: taguser.uid,
+                            nom: response.data.nom,
+                            prenom: response.data.prenom,
+                        },
+                    );
+                });
+                this.setState({listUsers: personnes});
+            });
+        }
+        global.liste = [];
 
-    }
+    };
 
     componentWillUnmount() {
         this._cleanUp();
     }
 
-    handleChangeNom = (text) => {
-        this.setState(
-            {textInputNom: text},
-        );
-    };
-
-    handleChangePrenom = (text) => {
-        this.setState(
-            {textInputPrenom: text},
-        );
-    };
 
     writeButton = () => {
         this.setState({buttonPressed: true});
-        const json = {
-            nom: this.state.textInputNom,
-            prenom: this.state.textInputPrenom,
-        };
-        const string = JSON.stringify(json);
-        this._runTest(string,json);
+        this._runTest(this.state.listToWrite);
     };
 
-    cancelButton = () => {
-        this.setState({buttonPressed: false});
-        this._cleanUp();
+
+    addElement = (user, key) => {
+        var myList = liste;
+        var register =
+            {
+                m: user.TAG + ',' + this.getDateNow(),
+            };
+        myList.push(register);
+        liste = myList;
+        this.setState({listToWrite: liste});
+        this.remove(personnes, personnes[key]);
+    };
+
+    remove = (array, element) => {
+        const index = array.indexOf(element);
+        array.splice(index, 1);
+    };
+
+    getDateNow = () => {
+        var date = new Date().getDate();
+        if (date < 10) {
+            date = '0' + date;
+        }
+        var month = new Date().getMonth() + 1;
+        if (month < 10) {
+            month = '0' + month;
+        }
+        var year = new Date().getFullYear();
+        var hour = new Date().getHours();
+        if (hour < 10) {
+            hour = '0' + hour;
+        }
+        var minutes = new Date().getMinutes();
+        if (minutes < 10) {
+            minutes = '0' + minutes;
+        }
+        var seconds = new Date().getSeconds();
+        if (seconds < 10) {
+            seconds = '0' + seconds;
+        }
+        return '' + date + '/' + month + '/' + year + ' ' + hour + ':' + minutes + ':' + seconds + '';
     };
 
     render() {
-        let {supported, enabled, tag, text, parsedText, isTestRunning} = this.state;
-
-        const style = {
-            height: 40,
-            borderColor: 'gray',
-            borderWidth: 1,
-            borderRadius: 4,
-            width: 250,
-            marginBottom: 20,
-        };
-
-        const theme = {
-            colors: {
-                primary: '#006aff',
-            },
-        };
 
         return (
             <Root>
-                <View style={{flex: 1, alignItems: 'center', marginTop: 20}}>
-                    <Card title={'Informations'} titleStyle={{fontSize: 20}}>
-                        <View style={{flexDirection: 'row'}}>
-                            <Text style={{marginBottom: 10, marginRight: 35, fontSize: 20}}>Nom </Text>
-                            <TextInput style={style}
-                                       placeholder={'Nom'}
-                                       onChangeText={this.handleChangeNom}
-                                       value={this.state.textInputNom}
-                                       theme={theme}
-                            />
-                        </View>
-                        <View style={{flexDirection: 'row'}}>
-                            <Text style={{marginBottom: 10, marginRight: 5, fontSize: 20}}>Prénom </Text>
-                            <TextInput style={style}
-                                       placeholder={'Prenom'}
-                                       onChangeText={this.handleChangePrenom}
-                                       value={this.state.textInputPrenom}
-                            />
-                        </View>
-                        <View>
-                            {!this.state.buttonPressed && <Button title="Write" onPress={this.writeButton}/>}
-                            {/*{this.state.buttonPressed && <Button title="Cancel" onPress={this.writeButton}/>}*/}
-                            <Modal transparent={true} visible={this.state.buttonPressed}>
-                                <View style={{backgroundColor: '#000000aa', flex: 1}}>
-                                    <View style={{
-                                        backgroundColor: '#ffffff',
-                                        marginTop: 150,
-                                        marginBottom: 150,
-                                        marginRight: 50,
-                                        marginLeft: 50,
-                                        padding: 35,
-                                        borderRadius: 10,
-                                        flex: 1,
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                    }}>
-                                        <Text style={{fontSize: 24}}>Write in the Tag</Text>
-                                        <Image style={{width: 150, height: 150, justifyContent: 'center'}}
-                                               source={require('./images/nfc-sign.png')}/>
-                                        <Text style={{marginBottom: 30}}>Tap here read the
-                                            tag {this.state.textInput}</Text>
-                                        <Button title={'Cancel'} onPress={this.cancelButton}
-                                                style={{borderRadius: 30}}/>
-                                    </View>
-                                </View>
-                            </Modal>
-                            <Modal transparent={true} visible={this.state.dataWritten}>
-                                <View style={{backgroundColor: '#000000aa', flex: 1}}>
-                                    <View style={{
-                                        backgroundColor: '#ffffff',
-                                        marginTop: 150,
-                                        marginBottom: 150,
-                                        marginRight: 50,
-                                        marginLeft: 50,
-                                        padding: 30,
-                                        borderRadius: 10,
-                                        flex: 1,
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                    }}>
-                                        <Text style={{fontSize: 20}}>Written successfully</Text>
-                                        <Image style={{width: 75, height: 75, justifyContent: 'center', marginTop: 30}}
-                                               source={require('./images/unnamed.png')}/>
-                                        <TouchableOpacity
-                                            onPress={() => this.setState({dataWritten: false})}
-                                            style={{
-                                                borderRadius: 30,
-                                                backgroundColor: '#56d246',
-                                                width: 100,
-                                                height: 40,
-                                                elevation: 8,
-                                                paddingVertical: 10,
-                                                paddingHorizontal: 12,
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                marginTop: 30,
-                                            }}>
-                                            <Text style={{flex: 1, color: 'white'}}>Ok</Text>
-                                        </TouchableOpacity>
+                <ScrollView style={{flex: 1, marginTop: 0}} contentContainerStyle={{alignItems: 'center'}}>
+                    {this.state.listUsers && this.state.listUsers.map((user, key) => {
+                        return (
+                            <Card title={'Personne ' + (key + 1)} titleStyle={{fontSize: 20}}
+                                  wrapperStyle={{width: 300}}>
+                                <View style={{flexDirection: 'row'}}>
+                                    <View style={{flexDirection: 'column'}}>
+                                        <Text style={{marginBottom: 20, marginRight: 35, fontSize: 15}}>Tag
+                                            : {user.TAG}  </Text>
+                                        <Text style={{marginBottom: 20, marginRight: 35, fontSize: 15}}>Nom
+                                            : {user.nom} </Text>
+                                        <Text style={{marginBottom: 30, marginRight: 35, fontSize: 15}}>Prenom
+                                            : {user.prenom} </Text>
 
                                     </View>
+                                    <View style={{marginTop: 40, marginLeft: 200, width: 100, position: 'absolute'}}>
+                                        <Button title={'Add'} onPress={() => this.addElement(user, key)}/>
+                                    </View>
                                 </View>
-                            </Modal>
-                        </View>
-                    </Card>
-
-                    <View style={{alignItems: 'center', justifyContent: 'center', position: 'relative', marginTop: 51}}>
-
-
+                            </Card>
+                        );
+                    })}
+                    <View style={{marginTop: 10, width: 100, marginBottom: 10}}>
+                        <Button title={'Write'} onPress={this.writeButton}/>
                     </View>
-                </View>
+                </ScrollView>
+                <Modal transparent={true} visible={this.state.dataWritten}>
+                    <View style={{backgroundColor: '#000000aa', flex: 1}}>
+                        <View style={{
+                            backgroundColor: '#ffffff',
+                            marginTop: 150,
+                            marginBottom: 150,
+                            marginRight: 50,
+                            marginLeft: 50,
+                            padding: 30,
+                            borderRadius: 10,
+                            flex: 1,
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                        }}>
+                            <Text style={{fontSize: 20}}>Written successfully</Text>
+                            <Image style={{width: 75, height: 75, justifyContent: 'center', marginTop: 30}}
+                                   source={require('./images/unnamed.png')}/>
+                            <TouchableOpacity
+                                onPress={() => this.setState({dataWritten: false})}
+                                style={{
+                                    borderRadius: 30,
+                                    backgroundColor: '#56d246',
+                                    width: 100,
+                                    height: 40,
+                                    elevation: 8,
+                                    paddingVertical: 10,
+                                    paddingHorizontal: 12,
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    marginTop: 30,
+                                }}>
+                                <Text style={{flex: 1, color: 'white'}}>Ok</Text>
+                            </TouchableOpacity>
+
+                        </View>
+                    </View>
+                </Modal>
             </Root>
         );
+
     }
 
     _cleanUp = () => {
         NfcManager.cancelTechnologyRequest().catch(() => 0);
     };
 
-    _runTest =  (textToWrite,json) => {
+    _runTest = (textToWrite) => {
+        var message = JSON.stringify(textToWrite)
+        var encryptedText = EncryptionService.encrypt(message)
         const cleanUp = () => {
             this.setState({isTestRunning: false});
             NfcManager.closeTechnology();
@@ -201,18 +207,12 @@ class WriteNfc extends Component {
         NfcManager.registerTagEvent(tag => console.log(tag), '', {})
             .then(() => NfcManager.requestTechnology(NfcTech.Ndef))
             .then(() => NfcManager.getTag())
-            .then(async tag=> {
-                this.setState({textToSend:tag.id+","+json.nom+","+json.prenom})
-                await Service.sendData({m:this.state.textToSend}).then(()=>console.warn("ok")).catch(ex=>console.warn(ex))
-                //console.warn(JSON.stringify(tag));
-            })
             .then(() => NfcManager.getNdefMessage())
             .then(tag => {
-
                 let parsedText = parseText(tag);
                 this.setState({tag, parsedText});
             })
-            .then(() => NfcManager.writeNdefMessage(NFCService.buildTextPayload(textToWrite)))
+            .then(() => NfcManager.writeNdefMessage(NFCService.buildTextPayload(encryptedText)))
             .then(() => {
                 this.setState({buttonPressed: false, dataWritten: true});
                 cleanUp();
@@ -221,7 +221,6 @@ class WriteNfc extends Component {
                 cleanUp();
             });
 
-        //console.warn(this.state.textToSend)
 
     };
 

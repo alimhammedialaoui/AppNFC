@@ -6,7 +6,7 @@ class About extends Component {
     render() {
         return (
             <Card title={"About"}>
-                <Text>@Copyright Ali</Text>
+                <Text>@Copyright</Text>
             </Card>
         );
     }

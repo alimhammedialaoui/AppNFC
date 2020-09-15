@@ -32,12 +32,12 @@ function MyTabs() {
                 options={{
                     tabBarIcon: 'pencil',
                 }}/>
-            <Tab.Screen
+            {/*<Tab.Screen
                 name="Format"
                 component={FormatNfc}
                 options={{
                     tabBarIcon: 'eraser',
-                }}/>
+                }}/>*/}
             <Tab.Screen
                 name="Infos"
                 component={About}
