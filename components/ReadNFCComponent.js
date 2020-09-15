@@ -1,5 +1,5 @@
 import React, {Component} from 'react';
-import {Text, View, Image, TouchableOpacity, Platform, Button} from 'react-native';
+import {Text, View, Image, TouchableOpacity, Platform, Button, ScrollView} from 'react-native';
 import NfcManager, {NfcTech} from 'react-native-nfc-manager';
 import {Card} from 'react-native-elements';
 import Service from './Service';
@@ -16,6 +16,8 @@ class ReadNfc extends Component {
             nom: null,
             prenom: null,
             tagId: null,
+            date: null,
+            liste: [],
         };
     }
 
@@ -47,6 +49,19 @@ class ReadNfc extends Component {
         }
     };
 
+    readRegisterInformation = (response) => {
+
+        response.data.map(register => {
+            var infos = {
+                tagId: register.uid,
+                date: register.registerDate,
+            };
+            var infoliste = this.state.liste;
+            infoliste.push(infos);
+            this.setState({liste: infoliste});
+        });
+    };
+
     render() {
         if (this.state.data === null) {
             return (
@@ -59,19 +74,23 @@ class ReadNfc extends Component {
                 </View>
             );
         } else {
-            if (this.state.nom !== null && this.state.prenom !== null) {
+            if (this.state.liste != null) {
                 return (
+                    <ScrollView style={{flex: 1}}>
+                        {this.state.liste.map((infos,key) => {
+                            return (
+                                <Card title={'Register '+(key+1)} titleStyle={{fontSize: 20}}>
+                                    <Text>UID : {infos.tagId} </Text>
+                                    <Text>Date : {infos.date} </Text>
+                                </Card>
 
-                    <View style={{flex: 1}}>
-                        <Card title={'Informations'} titleStyle={{fontSize: 20}}>
-                            <Text>Nom : {this.state.nom} </Text>
-                            <Text>Prenom : {this.state.prenom} </Text>
-                            <View style={{marginTop: 170}}>
-                                <Button style={{padding: 170}} title="Read another tag"
-                                        onPress={() => this.setState({data: null, buttonPressed: false})}/>
-                            </View>
-                        </Card>
-                    </View>
+                            );
+                        })}
+                        <View style={{marginTop: 10, position: 'relative'}}>
+                            <Button style={{padding: 170}} title="Read another tag"
+                                    onPress={() => this.setState({data: null, buttonPressed: false})}/>
+                        </View>
+                    </ScrollView>
                 );
             } else {
                 return <View style={{flex: 1, alignItems: 'center', justifyContent: 'center'}}>
@@ -84,15 +103,6 @@ class ReadNfc extends Component {
             }
         }
 
-        // <View style={{padding: 20}}>
-        //     <Text>NFC Demo</Text>
-        //     <TouchableOpacity
-        //         style={{padding: 10, width: 200, margin: 20, borderWidth: 1, borderColor: 'black'}}
-        //         onPress={this._test}>
-        //         <Text>Test</Text>
-        //     </TouchableOpacity>
-        //
-        // </View>
 
     }
 
@@ -119,12 +129,13 @@ class ReadNfc extends Component {
             let data = tag.ndefMessage[0].payload.slice(3);
 
             this.setState({data: this.bin2String(data)});
-            var decryptedText = EncryptionService.decrypt(this.state.data)
-            var outputJson = JSON.parse(decryptedText)
-            outputJson.map(object =>{
-                console.log(object.m)
-            })
-            await Service.TagRegister(outputJson).then(()=>{this._cleanUp()}).catch(() => alert('No network connection'));
+            var decryptedText = EncryptionService.decrypt(this.state.data);
+            var outputJson = JSON.parse(decryptedText);
+            await Service.TagRegister(outputJson).then((r) => {
+                    this._cleanUp();
+                    this.readRegisterInformation(r);
+                },
+            ).catch(() => alert('No network connection'));
         } catch (ex) {
             NfcManager.unregisterTagEvent().catch(() => 0);
         }
