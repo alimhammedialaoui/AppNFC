@@ -1,0 +1,2 @@
+# AppNFC
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/2944c32bb1b745e797b9161d187a4690)](https://app.codacy.com/gh/alimhammedialaoui/AppNFC?utm_source=github.com&utm_medium=referral&utm_content=alimhammedialaoui/AppNFC&utm_campaign=Badge_Grade_Settings)
